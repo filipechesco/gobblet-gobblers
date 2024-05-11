@@ -134,7 +134,6 @@ function reloadView() {
 }
 
 function reiniciarJogo() {
-  $('#reiniciar').hide();
   tabuleiro = [
     [0, 0, 0],
     [0, 0, 0],
@@ -146,6 +145,7 @@ function reiniciarJogo() {
   pecasVermelho = pecasInicial.map(function(valor){return -valor;});
   jogoAcabou = false;
   $('#mensagem').empty();
+  $('#move-list').empty();
   reloadView();
 }
 
@@ -161,7 +161,7 @@ function selecionarPeca(peca) {
 
 function checaJogadaValida(row, col, peca) {
   // não se pode começar com uma peça no meio do tabuleiro
-  if (primeiroMovimento && row == 1 && col == 1)
+  if (primeiroMovimento && row == 1 && col == 1 && peca == 3)
     return false;
   var val = tabuleiro[row][col];
   // não se pode cobrir uma peça da mesma cor
@@ -179,14 +179,32 @@ function checaJogadaValida(row, col, peca) {
   return true;
 }
 
+function salvarMovimento(row, col, peca) {
+  var cor, tamanho;
+  switch (Math.abs(peca)) {
+    case 1: tamanho = 'PEQ'; break;
+    case 2: tamanho = 'MED'; break;
+    case 3: tamanho = 'GDE'; break;
+  }
+  cor = (peca < 0) ? 'red' : 'blue';
+  var corSpan = $('<span></span>').css('color', cor).html(`<strong>${tamanho}</strong>`);
+  var movimento = $('<li></li>').append(corSpan).append(` => ${row+1}x${col+1}`);
+  $('#move-list').append(movimento);
+}
+
+function removerPeca(peca) {
+  if (peca > 0)
+    pecasAzul.splice(pecasAzul.indexOf(peca), 1);
+  if (peca < 0)
+    pecasVermelho.splice(pecasVermelho.indexOf(peca), 1);
+}
+
 function efetuarJogada(row, col, peca) {
   tabuleiro[row][col] = peca;
   primeiroMovimento = false;
   proximoJogador *= -1;
-  if (peca > 0)
-    pecasAzul.splice(pecasAzul.indexOf(peca), 1);
-  if (peca < 0)
-    pecasVermelho.splice(pecasAzul.indexOf(peca), 1);
+  removerPeca(peca);
+  salvarMovimento(row, col, peca);
 }
 
 function posicionar(posicao) {

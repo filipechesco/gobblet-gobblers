@@ -90,6 +90,13 @@ header {
 	border-bottom: none;
 }
 
+#move-list {
+	height: 300px;
+	width: 100px;
+	list-style-type: none;
+	padding-left: 0px;
+}
+
 /* estilo das peças posicionadas no tabuleiro e peças disponíveis */
 .vermelho {
   background-color: red;
