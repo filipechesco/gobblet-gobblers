@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<link type="text/css" rel="stylesheet" href="style.css" />
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+		<script type="text/javascript" src="script.js"></script>
+		<title>Gobblet Gobblers</title>
+	</head>
+	<body>
+		<header>
+			<h1>Gobblet Gobblers</h1>
+		</header>
+    <br />
+		<div class="container">
+			<table id="tabuleiro" cellspacing="0">
+				<tr>
+					<td id="00" onclick="posicionar(this)"></td>
+					<td id="01" onclick="posicionar(this)"></td>
+					<td id="02" onclick="posicionar(this)"></td>
+				</tr>
+				<tr>
+					<td id="10" onclick="posicionar(this)"></td>
+					<td id="11" onclick="posicionar(this)"></td>
+					<td id="12" onclick="posicionar(this)"></td>
+				</tr>
+				<tr>
+					<td id="20" onclick="posicionar(this)"></td>
+					<td id="21" onclick="posicionar(this)"></td>
+					<td id="22" onclick="posicionar(this)"></td>
+				</tr>
+			</table>
+			<table id="pecas-disponiveis">
+				<tr>
+					<td id="peca-grande" onclick="selecionarPeca(this)"></td>
+				</tr>
+				<tr>
+					<td id="peca-medio" onclick="selecionarPeca(this)"></td>
+				</tr>
+				<tr>
+					<td id="peca-pequeno" onclick="selecionarPeca(this)"></td>
+				</tr>
+			</table>
+		</div>
+    <br />
+    <h1 id="mensagem"></h1>
+		<br />
+		<input type="button" value="Reiniciar" id="reiniciar" onclick="reiniciarJogo(this)"/>
+	</body>
+</html>
