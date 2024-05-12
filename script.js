@@ -37,13 +37,13 @@ function valueFromClasses(classes) {
   return value;
 }
 
-function desenharTabuleiro() {
+function desenharTabuleiro(tab) {
   for(var row=0; row<3; row++) {
     for(var col=0; col<3; col++) {
       var idCelula = "#" + row.toString() + col.toString();
       $(idCelula).empty();
-      if (tabuleiro[row][col] != 0) {
-        var classes = classesFromValue(tabuleiro[row][col]);
+      if (tab[row][col] != 0) {
+        var classes = classesFromValue(tab[row][col]);
         var peca = $('<div></div>').attr('class', classes);
         $(idCelula).append(peca);
       }
@@ -98,31 +98,31 @@ function desenharPecasDisponiveis() {
   }
 }
 
-function checaVitoria() {
+function avaliarTabuleiro(tab) {
   for (var i=0; i<3; i++) {
-    if (tabuleiro[i][0] > 0 && tabuleiro[i][1] > 0 && tabuleiro[i][2] > 0)
+    if (tab[i][0] > 0 && tab[i][1] > 0 && tab[i][2] > 0)
       return 1;
-    if (tabuleiro[i][0] < 0 && tabuleiro[i][1] < 0 && tabuleiro[i][2] < 0)
+    if (tab[i][0] < 0 && tab[i][1] < 0 && tab[i][2] < 0)
       return -1;
-    if (tabuleiro[0][i] > 0 && tabuleiro[1][i] > 0 && tabuleiro[2][i] > 0)
+    if (tab[0][i] > 0 && tab[1][i] > 0 && tab[2][i] > 0)
       return 1;
-    if (tabuleiro[0][i] < 0 && tabuleiro[1][i] < 0 && tabuleiro[2][i] < 0)
+    if (tab[0][i] < 0 && tab[1][i] < 0 && tab[2][i] < 0)
       return -1;
   }
-  if (tabuleiro[0][0] > 0 && tabuleiro[1][1] > 0 && tabuleiro[2][2] > 0)
+  if (tab[0][0] > 0 && tab[1][1] > 0 && tab[2][2] > 0)
     return 1;
-  if (tabuleiro[0][0] < 0 && tabuleiro[1][1] < 0 && tabuleiro[2][2] < 0)
+  if (tab[0][0] < 0 && tab[1][1] < 0 && tab[2][2] < 0)
     return -1;
-  if (tabuleiro[0][2] > 0 && tabuleiro[1][1] > 0 && tabuleiro[2][0] > 0)
+  if (tab[0][2] > 0 && tab[1][1] > 0 && tab[2][0] > 0)
     return 1;
-  if (tabuleiro[0][2] < 0 && tabuleiro[1][1] < 0 && tabuleiro[2][0] < 0)
+  if (tab[0][2] < 0 && tab[1][1] < 0 && tab[2][0] < 0)
     return -1;
   return 0;
 }
 
 function reloadView() {
-  desenharTabuleiro();
-  var vitoria = checaVitoria();
+  desenharTabuleiro(tabuleiro);
+  var vitoria = avaliarTabuleiro(tabuleiro);
   if (vitoria != 0) {
     $('#mensagem').html(`Jogador ${vitoria == 1 ? "azul" : "vermelho"} venceu!`);
     $('#reiniciar').show();
@@ -130,6 +130,7 @@ function reloadView() {
   }
   else {
     desenharPecasDisponiveis();
+    mostrarBotaoIa();
   }
 }
 
@@ -159,11 +160,11 @@ function selecionarPeca(peca) {
     pecaSelecionada.addClass('selected');
 }
 
-function checaJogadaValida(row, col, peca) {
-  // não se pode começar com uma peça no meio do tabuleiro
+function checaJogadaValida(tab, row, col, peca) {
+  // não se pode começar com uma peça grande no meio do tabuleiro
   if (primeiroMovimento && row == 1 && col == 1 && peca == 3)
     return false;
-  var val = tabuleiro[row][col];
+  var val = tab[row][col];
   // não se pode cobrir uma peça da mesma cor
   if ((val < 0 && peca < 0) || (val > 0 && peca > 0))
     return false;
@@ -173,9 +174,6 @@ function checaJogadaValida(row, col, peca) {
   // jogador não tem mais peças deste tamanho
   if ((peca < 0 && !pecasVermelho.includes(peca)) || (peca > 0 && !pecasAzul.includes(peca)))
     return false
-  // jogador está tentando jogar peças do oponente
-  if ((peca < 0 && proximoJogador > 0) || (peca > 0 && proximoJogador < 0))
-    return false;
   return true;
 }
 
@@ -225,7 +223,7 @@ function posicionar(posicao) {
   var posicaoId = $(posicao).attr('id');
   var row = parseInt(posicaoId.substring(0, 1));
   var col = parseInt(posicaoId.substring(1));
-  var movimentoValido = checaJogadaValida(row, col, pecaJogada);
+  var movimentoValido = checaJogadaValida(tabuleiro, row, col, pecaJogada);
 
   if (!movimentoValido) {
     alert('Jogada inválida!')
@@ -237,6 +235,162 @@ function posicionar(posicao) {
   reloadView();
 }
 
+function copiarTabuleiro(tab) {
+  return tab.map(function(row) {
+    return row.slice();
+  });
+}
+
 $('document').ready(function() {
   reiniciarJogo();
 });
+
+/* funções relacionadas ao minimax do jogo */
+
+function listarJogadasValidas(tab, todasPecas) {
+  var pecas = todasPecas.slice();
+  pecas = pecas.filter(function(elemento) {
+    return Math.abs(elemento) != 1;
+  });
+  pecas = pecas.filter(function(elemento, indice, self) {
+    return self.indexOf(elemento) === indice;
+  });
+  pecas.sort(function(a,b) {
+    return Math.abs(a) - Math.abs(b);
+  });
+  var jogadasValidas = []
+  pecas.forEach(peca => {
+    for (var row=0; row<3; row++) {
+      for (var col=0; col<3; col++) {
+        if (checaJogadaValida(tab, row, col, peca))
+          jogadasValidas.push([row, col, peca]);
+      }
+    }
+  });
+  return jogadasValidas;
+}
+
+function minimax(tab, jogador, pecasA, pecasV) {
+  var best, vencedor, pecas;
+
+  // valores salvos: row, col, peca, movesToEnd, eval
+  if (jogador == 1) {
+    best = [-1, -1, 0, 100, -99999];
+    pecas = pecasA.slice();
+  }
+  else {
+    best = [-1, -1, 0, 100, +99999];
+    pecas = pecasV.slice();
+  }
+
+  var movimentos = listarJogadasValidas(tab, pecas);
+  
+  if (avaliarTabuleiro(tab) != 0 || movimentos.length == 0)
+    return [-1, -1, 0, 0, avaliarTabuleiro(tab)];
+
+  if (movimentos.length > 0) {
+    movimentos.forEach(movimento => {
+      var row = movimento[0];
+      var col = movimento[1];
+      var peca = movimento[2];
+      var tabResultante = copiarTabuleiro(tab);
+      tabResultante[row][col] = peca;
+      novasPecas = pecas.slice();
+      novasPecas.splice(novasPecas.indexOf(peca), 1);
+
+      if (jogador == 1)
+        vencedor = minimax(tabResultante, -jogador, novasPecas, pecasV);
+      else
+        vencedor = minimax(tabResultante, -jogador, pecasA, novasPecas);
+      
+      if (jogador == 1) {
+        // se o resultado é melhor para o jogador (derrota -> empate/vitória, empate -> vitória)
+        // se o jogador está ganhando e existe uma maneira mais rápida de ganhar
+        // se o jogador está perdendo e existe uma maneira mais lenta de perder
+        if (
+            (vencedor[4] > best[4])
+            || (best[4] == jogador && vencedor[4] == best[4] && vencedor[3] < best[3])
+            || (best[4] == -jogador && vencedor[4] == best[4] && vencedor[3] > best[3])
+          ) {
+          best[0] = row;
+          best[1] = col;
+          best[2] = peca;
+          best[3] = vencedor[3] + 1;
+          best[4] = vencedor[4];
+        }
+      }
+      else {
+        if (
+            (vencedor[4] < best[4])
+            || (best[4] == jogador && vencedor[4] == best[4] && vencedor[3] < best[3])
+            || (best[4] == -jogador && vencedor[4] == best[4] && vencedor[3] > best[3])
+          ) {
+          best[0] = row;
+          best[1] = col;
+          best[2] = peca;
+          best[3] = vencedor[3] + 1;
+          best[4] = vencedor[4];
+        }
+      }
+    });
+  }
+
+  return best;
+}
+
+function gerarTextoSugestaoIa(sugestao) {
+  var row = sugestao[0];
+  var col = sugestao[1];
+  var peca = sugestao[2];
+  var movesToEnd = sugestao[3];
+  var vantagem = sugestao[4];
+
+  switch (Math.abs(peca)) {
+    case 1: peca = '\"Pequena\"'; break;
+    case 2: peca = '\"Média\"'; break;
+    case 3: peca = '\"Grande\"'; break;
+    default: peca = '?';
+  }
+
+  switch (vantagem) {
+    case -1: vantagem = 'vermelho'; break;
+    case 0: vantagem = 'neutro'; break;
+    case 1: vantagem = 'azul'; break;
+    default: vantagem = '?'
+  }
+
+  return `Peça ${peca}, linha ${row+1}, coluna ${col+1}<br />Vantagem: ${vantagem} (${movesToEnd} movimentos para o fim)`;
+}
+
+function mostrarSugestaoIa(sugestao) {
+  $('#botao-ia').hide();
+  var textoSugestao = gerarTextoSugestaoIa(sugestao);
+  $('#texto-ia').html(textoSugestao).show();
+}
+
+function mostrarBotaoIa() {
+  $('#botao-ia').hide();
+  if (!primeiroMovimento)
+    $('#botao-ia').prop('disabled', false).show();
+  $('#texto-ia').hide();
+}
+
+function calcularMelhorMovimento() {
+  $('#botao-ia').prop('disabled', true);
+
+  // var tabCopia, best, row, col, peca, movesToEnd, vantagem;
+
+  var tabCopia = copiarTabuleiro(tabuleiro);
+
+  var best = minimax(tabCopia, proximoJogador, pecasAzul, pecasVermelho);
+
+  // row = best[0];
+  // col = best[1];
+  // peca = best[2];
+  // movesToEnd = best[3];
+  // vantagem = best[4];
+
+  // console.log(`Peça ${peca} - linha ${row} - coluna ${col} (vantagem: ${vantagem} - vitória em ${movesToEnd})`)
+
+  mostrarSugestaoIa(best);
+}
