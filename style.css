@@ -20,7 +20,8 @@ header {
   text-align: center;
 }
 
-#reiniciar {
+#reiniciar,
+#botao-ia {
   display: block;
 	margin-left: auto;
 	margin-right: auto;
@@ -31,6 +32,23 @@ header {
 	border: none;
 	border-radius: 5px;
 	cursor: pointer;
+}
+
+#botao-ia:disabled {
+	background: #e8e8e8;
+	color: lightgrey;
+}
+
+#sugestao-ia {
+	height: 80px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+#texto-ia {
+	font-size: 1em;
+	font-family: system-ui;
 }
 
 /* estilização do tabuleiro e das peças disponíveis */
