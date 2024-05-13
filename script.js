@@ -160,9 +160,14 @@ function selecionarPeca(peca) {
     pecaSelecionada.addClass('selected');
 }
 
+function verificaTabuleiroEmBranco(tab) {
+  return tab.some(row => row.some(elemento => elemento != 0)) == false;
+}
+
 function checaJogadaValida(tab, row, col, peca) {
-  // não se pode começar com uma peça grande no meio do tabuleiro
-  if (primeiroMovimento && row == 1 && col == 1 && peca == 3)
+  var tabuleiroEmBranco = verificaTabuleiroEmBranco(tab);
+  // não se pode jogar a peça grande no meio na primeira jogada
+  if (tabuleiroEmBranco && row == 1 && col == 1 && peca == 3)
     return false;
   var val = tab[row][col];
   // não se pode cobrir uma peça da mesma cor
@@ -295,8 +300,11 @@ function minimax(tab, jogador, pecasA, pecasV) {
       var peca = movimento[2];
       var tabResultante = copiarTabuleiro(tab);
       tabResultante[row][col] = peca;
-      novasPecas = pecas.slice();
-      novasPecas.splice(novasPecas.indexOf(peca), 1);
+      var novasPecas = pecas.slice();
+      if (novasPecas.indexOf(peca) >= 0)
+        novasPecas.splice(novasPecas.indexOf(peca), 1);
+      else
+        throw new Error(`Elemento não encontrado no vetor: ${peca} em ${novasPecas}`);
 
       if (jogador == 1)
         vencedor = minimax(tabResultante, -jogador, novasPecas, pecasV);
